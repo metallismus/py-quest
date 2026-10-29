@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Cyber Quest 🚀 | Інтерактивний Тренажер</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Pyodide CDN -->
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide.js"></script>
+    <!-- CodeMirror 5 CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/theme/dracula.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/python/python.min.js"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600;700&family=Inter:wght@300;400;600;700;800&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0d1117;
+            color: #c9d1d9;
+        }
+
+        .font-code {
+            font-family: 'Fira Code', monospace;
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #161b22;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #30363d;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #8b5cf6;
+        }
+
+        .CodeMirror {
+            height: 320px;
+            font-family: 'Fira Code', monospace;
+            font-size: 14px;
+            border-radius: 0.5rem;
+            border: 1px solid #30363d;
+            background-color: #0d1117 !important;
+        }
+
+        .glow-purple {
+            box-shadow: 0 0 15px rgba(139, 92, 246, 0.3);
+        }
+        .glow-green {
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.3);
+        }
+
+        .neon-border-purple {
+            border-color: #8b5cf6;
+        }
+
+        /* Loading spinner */
+        .loader {
+            border: 3px solid #30363d;
+            border-radius: 50%;
+            border-top: 3px solid #8b5cf6;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between">
+
+    <!-- Navbar & Header -->
+    <header class="bg-[#161b22] border-b border-[#30363d] sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap justify-between items-center gap-4">
+            <div class="flex items-center space-x-3">
+                <span class="text-3xl">🐍</span>
+                <div>
+                    <h1 class="text-xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-500 to-green-400">
+                        PYTHON CYBER QUEST
+                    </h1>
+                    <p class="text-xs text-gray-400">Інтерактивний тренажер базових алгоритмів</p>
+                </div>
+            </div>
+
+            <!-- Gamification & Pyodide status -->
+            <div class="flex items-center space-x-6">
+                <!-- Status Badge -->
+                <div id="pyodide-status" class="flex items-center space-x-2 bg-[#0d1117] px-3 py-1.5 rounded-full border border-[#30363d] text-xs">
+                    <div class="loader" id="pyodide-loader"></div>
+                    <span id="pyodide-status-text" class="text-yellow-400 font-medium">Завантаження Python engine...</span>
+                </div>
+
+                <!-- XP & Progress -->
+                <div class="flex items-center space-x-4 bg-[#0d1117] px-4 py-1.5 rounded-xl border border-[#30363d]">
+                    <div class="text-right">
+                        <div class="text-xs text-gray-400">Твій Досвід</div>
+                        <div class="text-sm font-bold text-purple-400" id="xp-display">0 / 500 XP</div>
+                    </div>
+                    <div class="w-24 bg-[#21262d] h-2.5 rounded-full overflow-hidden border border-[#30363d]">
+                        <div id="progress-bar" class="bg-gradient-to-r from-purple-500 to-green-400 h-full w-0 transition-all duration-500"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 py-6 w-full flex-grow grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- Left Column: Tasks Navigation & Details -->
+        <section class="lg:col-span-5 flex flex-col space-y-4">
+            
+            <!-- Tasks Navigation Tabs -->
+            <div class="bg-[#161b22] p-2 rounded-xl border border-[#30363d] flex flex-wrap gap-1" id="task-tabs">
+                <!-- Tabs rendered by JS -->
+            </div>
+
+            <!-- Task Card Details -->
+            <div class="bg-[#161b22] p-5 rounded-xl border border-[#30363d] flex-grow flex flex-col justify-between shadow-lg">
+                <div>
+                    <!-- Task Header -->
+                    <div class="flex justify-between items-start mb-3">
+                        <span id="task-badge" class="px-2.5 py-1 text-xs font-semibold rounded-full bg-purple-900/50 text-purple-300 border border-purple-500/30">
+                            Рівень 1
+                        </span>
+                        <span id="task-status" class="text-xs px-2.5 py-1 rounded-full bg-gray-800 text-gray-400 border border-gray-700">
+                            ⏳ Не виконано
+                        </span>
+                    </div>
+
+                    <h2 id="task-title" class="text-xl font-bold text-white mb-2 flex items-center gap-2">
+                        <!-- Dynamic Title -->
+                    </h2>
+
+                    <!-- Task Story / Scenario -->
+                    <div id="task-description" class="text-sm text-gray-300 space-y-2 mb-4 leading-relaxed">
+                        <!-- Dynamic Description -->
+                    </div>
+
+                    <!-- Instructions / Requirements -->
+                    <div class="bg-[#0d1117] p-3.5 rounded-lg border border-[#30363d] mb-4">
+                        <h4 class="text-xs font-bold text-purple-400 uppercase tracking-wider mb-2 flex items-center gap-1">
+                            🎯 Технічне завдання:
+                        </h4>
+                        <ul id="task-requirements" class="text-xs text-gray-300 space-y-1.5 list-disc list-inside">
+                            <!-- Dynamic Requirements -->
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Hint Section -->
+                <div>
+                    <button id="hint-toggle-btn" class="text-xs text-gray-400 hover:text-purple-400 transition-colors flex items-center gap-1 mb-2">
+                        💡 Потрібна підказка? (Натисни)
+                    </button>
+                    <div id="hint-box" class="hidden bg-purple-950/30 border border-purple-800/50 p-3 rounded-lg text-xs text-purple-200">
+                        <!-- Dynamic Hint -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Right Column: Code Editor & Execution Output -->
+        <section class="lg:col-span-7 flex flex-col space-y-4">
+
+            <!-- Code Editor Container -->
+            <div class="bg-[#161b22] rounded-xl border border-[#30363d] overflow-hidden flex flex-col shadow-lg">
+                <!-- Editor Header Toolbar -->
+                <div class="bg-[#21262d] px-4 py-2.5 flex justify-between items-center border-b border-[#30363d]">
+                    <div class="flex items-center space-x-2">
+                        <span class="w-3 h-3 rounded-full bg-red-500 inline-block"></span>
+                        <span class="w-3 h-3 rounded-full bg-yellow-500 inline-block"></span>
+                        <span class="w-3 h-3 rounded-full bg-green-500 inline-block"></span>
+                        <span class="text-xs font-code text-gray-400 ml-2">solution.py</span>
+                    </div>
+
+                    <div class="flex items-center space-x-2">
+                        <button id="reset-code-btn" class="px-2.5 py-1 text-xs bg-[#30363d] hover:bg-gray-700 text-gray-300 rounded transition-all flex items-center gap-1">
+                            🔄 Скинути
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Code Mirror Area -->
+                <div class="p-2 bg-[#0d1117]">
+                    <textarea id="code-editor"></textarea>
+                </div>
+
+                <!-- Controls Toolbar -->
+                <div class="p-3 bg-[#161b22] border-t border-[#30363d] flex flex-wrap gap-2 justify-between items-center">
+                    <span class="text-xs text-gray-400 font-code" id="editor-info">⌨️ Мова: Python 3.11 (Pyodide)</span>
+                    <div class="flex items-center space-x-3">
+                        <button id="run-code-btn" disabled class="px-4 py-2 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white font-semibold text-xs rounded-lg transition-all flex items-center gap-2 shadow-md hover:glow-purple">
+                            ▶️ Запустити код
+                        </button>
+                        <button id="test-code-btn" disabled class="px-4 py-2 bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white font-semibold text-xs rounded-lg transition-all flex items-center gap-2 shadow-md hover:glow-green">
+                            🧪 Перевірити рішення
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Console / Output Area -->
+            <div class="bg-[#161b22] rounded-xl border border-[#30363d] flex flex-col h-56 overflow-hidden shadow-lg">
+                <div class="bg-[#21262d] px-4 py-2 flex justify-between items-center border-b border-[#30363d]">
+                    <span class="text-xs font-bold text-gray-300 flex items-center gap-2">
+                        🖥️ Консоль виводу (Standard Output)
+                    </span>
+                    <button id="clear-console-btn" class="text-xs text-gray-400 hover:text-white transition-colors">
+                        🧹 Очистити
+                    </button>
+                </div>
+
+                <div id="console-output" class="p-4 font-code text-xs text-green-400 overflow-y-auto flex-grow bg-[#0d1117] whitespace-pre-wrap leading-relaxed">
+<span class="text-gray-500">// Результати виконання коду та системні повідомлення з'являться тут...</span>
+                </div>
+            </div>
+
+            <!-- Test Results Box -->
+            <div id="test-result-card" class="hidden p-4 rounded-xl border text-xs font-code transition-all">
+                <!-- Test feedback injected here -->
+            </div>
+
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-[#161b22] border-t border-[#30363d] py-3 text-center text-xs text-gray-500">
+        Python Cyber Quest &copy; 2026 | Створено для інтерактивного навчання Python на GitHub Pages 🚀
+    </footer>
+
+    <!-- App Logic JavaScript -->
+    <script>
+        // --- TASK DEFINITIONS ---
+        const tasks = [
+            {
+                id: 1,
+                title: "🚀 Реєстрація Космоагента",
+                badge: "Введення / Виведення",
+                xp: 100,
+                desc: "Вітаємо в Космічному Патрулі! Нам потрібно автоматизувати створення профілю для нових пілотів. Напиши програму, яка збирає дані про агента та виводить офіційну візитку.",
+                requirements: [
+                    "Створи змінну <code class='text-purple-400'>callsign</code> зі значенням назви позивного (наприклад, 'Phoenix').",
+                    "Створи змінну <code class='text-purple-400'>level</code> з числовим значенням (наприклад, 5).",
+                    "Виведіть рядок строго за шаблоном: <br><code class='text-green-400'>Агент: [callsign] | Рівень: [level]</code>"
+                ],
+                initialCode: `# Task 1: Basic I/O & Variables
+# Створи змінні callsign та level, а потім виведи їх за шаблоном
+
+callsign = "Phoenix"
+level = 5
+
+# Напиши print() нижче:
+print(f"Агент: {callsign} | Рівень: {level}")
+`,
+                hint: "Використовуй f-рядки для форматування: print(f'Агент: {callsign} | Рівень: {level}')",
+                test: (output, editorCode, pyodide) => {
+                    const hasCallsign = /callsign\s*=/.test(editorCode);
+                    const hasLevel = /level\s*=/.test(editorCode);
+                    const matchPattern = /Агент:\s*.+\s*\|\s*Рівень:\s*\d+/.test(output.trim());
+                    
+                    if (!hasCallsign || !hasLevel) {
+                        return { success: false, msg: "❌ Помилка: Обов'язково оголоси змінні `callsign` та `level`!" };
+                    }
+                    if (!matchPattern) {
+                        return { success: false, msg: "❌ Помилка: Формат виводу не відповідає шаблону: 'Агент: [callsign] | Рівень: [level]'" };
+                    }
+                    return { success: true, msg: "🎉 Чудово! Космоагента успішно зареєстровано в базі даних!" };
+                }
+            },
+            {
+                id: 2,
+                title: "🛡️ Кіберзахисник Брандмауера",
+                badge: "Умовні оператори",
+                xp: 100,
+                desc: "Система кібербезпеки виявила підозрілий запит. Напиши алгоритм перевірки пароля доступа (`passcode`) та рівня допуску (`clearance`).",
+                requirements: [
+                    "Якщо `passcode` дорівнює <code class='text-purple-400'>\"cyber2026\"</code> І `clearance` >= 3, виведи: <code class='text-green-400'>\"Доступ дозволено\"</code>.",
+                    "В іншому випадку виведи: <code class='text-red-400'>\"Відмовлено в доступі\"</code>."
+                ],
+                initialCode: `# Task 2: Conditional Logic
+passcode = "cyber2026"
+clearance = 4
+
+# Напиши умовну конструкцію if / else:
+if passcode == "cyber2026" and clearance >= 3:
+    print("Доступ дозволено")
+else:
+    print("Відмовлено в доступі")
+`,
+                hint: "Використовуй оператор `and` для перевірки двох умов одночасно у блоці `if`.",
+                test: async (output, editorCode, pyodide) => {
+                    const hasIf = /if\s+/.test(editorCode);
+                    const hasElse = /else\s*:/.test(editorCode);
+                    
+                    if (!hasIf || !hasElse) {
+                        return { success: false, msg: "❌ Помилка: У коді обов'язково мають бути конструкції `if` та `else`!" };
+                    }
+
+                    // Run dynamic test cases with Pyodide
+                    try {
+                        const testRunnerCode = `
+def check(p, c):
+    import io, sys
+    buf = io.StringIO()
+    sys.stdout = buf
+    # Execute condition code dynamically
+    if p == "cyber2026" and c >= 3:
+        res = "Доступ дозволено"
+    else:
+        res = "Відмовлено в доступі"
+    return res
+
+t1 = check("cyber2026", 4) == "Доступ дозволено"
+t2 = check("wrong", 5) == "Відмовлено в доступі"
+t3 = check("cyber2026", 1) == "Відмовлено в доступі"
+t1 and t2 and t3
+`;
+                        const isCorrect = await pyodide.runPythonAsync(testRunnerCode);
+                        if (isCorrect && output.trim() === "Доступ дозволено") {
+                            return { success: true, msg: "🎉 Бездоганно! Брандмауер надійно захищає систему." };
+                        } else {
+                            return { success: false, msg: "❌ Помилка: Алгоритм дає неправильну відповідь при зміні значень пароля або допуску!" };
+                        }
+                    } catch(e) {
+                        return { success: false, msg: `❌ Системна помилка під час тесту: ${e.message}` };
+                    }
+                }
+            },
+            {
+                id: 3,
+                title: "💎 Автоматичний Шахтар Кристалів",
+                badge: "Цикли та Накопичення",
+                xp: 100,
+                desc: "Дрони-шахтарі збирають коштовні кристали в астероїдному поясі. У тебе є список зібраних руд за день. Обчисли загальну кількість здобутих кристалів за допомогою циклу.",
+                requirements: [
+                    "Дано список <code class='text-purple-400'>mined_ore = [12, 0, 25, 8, 0, 30]</code>.",
+                    "Використай цикл <code class='text-purple-400'>for</code> для обчислення суми елементів.",
+                    "Збережи результат у змінну <code class='text-purple-400'>total_gems</code> та виведи її."
+                ],
+                initialCode: `# Task 3: Loops & Accumulation
+mined_ore = [12, 0, 25, 8, 0, 30]
+total_gems = 0
+
+# Напиши цикл for для підрахунку суми:
+for gems in mined_ore:
+    total_gems += gems
+
+print(f"Всього кристалів: {total_gems}")
+`,
+                hint: "На кожній ітерації циклу додавай поточне значення руди до змінної total_gems.",
+                test: (output, editorCode, pyodide) => {
+                    const hasFor = /for\s+\w+\s+in\s+mined_ore/.test(editorCode);
+                    const containsCorrectTotal = output.includes("75");
+
+                    if (!hasFor) {
+                        return { success: false, msg: "❌ Помилка: Використай цикл `for` для перебору елементів списку `mined_ore`!" };
+                    }
+                    if (!containsCorrectTotal) {
+                        return { success: false, msg: "❌ Помилка: Загальна сума обчислена неправильно. Очікується 75 кристалів!" };
+                    }
+                    return { success: true, msg: "🎉 Шахтарські дрони працюють ідеально! Всі кристали пораховано." };
+                }
+            },
+            {
+                id: 4,
+                title: "🎒 Менеджер RPG Інвентарю",
+                badge: "Структури даних (Списки)",
+                xp: 100,
+                desc: "У вашому інвентарі є дублікати предметів та непотрібний мотлох. Потрібно впорядкувати список предметів для битви з босом.",
+                requirements: [
+                    "Дано початковий список: <code class='text-purple-400'>inventory = [\"Меч\", \"Зілля\", \"Щит\", \"Зілля\"]</code>.",
+                    "Додай елемент <code class='text-purple-400'>\"Шолом\"</code> до списку за допомогою методів списку.",
+                    "Видали перший знайдений елемент <code class='text-purple-400'>\"Зілля\"</code> зі списку.",
+                    "Виведи фінальний список інвентарю."
+                ],
+                initialCode: `# Task 4: List Manipulation
+inventory = ["Меч", "Зілля", "Щит", "Зілля"]
+
+# 1. Додай "Шолом" до списку (append)
+inventory.append("Шолом")
+
+# 2. Видали одне "Зілля" зі списку (remove)
+inventory.remove("Зілля")
+
+print(inventory)
+`,
+                hint: "Використовуй `.append('Шолом')` для додавання та `.remove('Зілля')` для видалення елемента.",
+                test: (output, editorCode, pyodide) => {
+                    const hasAppend = /\.append\(["']Шолом["']\)/.test(editorCode);
+                    const hasRemove = /\.remove\(["']Зілля["']\)/.test(editorCode);
+
+                    if (!hasAppend || !hasRemove) {
+                        return { success: false, msg: "❌ Помилка: Використай класичні методи списків `.append()` та `.remove()`!" };
+                    }
+
+                    if (output.includes("Меч") && output.includes("Щит") && output.includes("Шолом")) {
+                        // Check exact list count
+                        const matchesPotion = (output.match(/Зілля/g) || []).length;
+                        if (matchesPotion === 1) {
+                            return { success: true, msg: "🎉 Інвентар впорядковано! Герой готовий до битви!" };
+                        }
+                    }
+                    return { success: false, msg: "❌ Помилка: Кінцевий вміст інвентарю не відповідає вимогам задачі." };
+                }
+            },
+            {
+                id: 5,
+                title: "🤖 Помічник Кібер-Асистент",
+                badge: "Функції та Модульність",
+                xp: 100,
+                desc: "Напиши функцію-помічника `calc_shield_damage(shield, damage)`, яка обчислює за залишок щита після отримання шкоди і не дає йому впасти нижче 0.",
+                requirements: [
+                    "Оголоси функцію <code class='text-purple-400'>calc_shield_damage(shield, damage)</code>.",
+                    "Функція повинна повертати (`return`) новий рівень щита: `shield - damage`.",
+                    "Якщо за залишок менше 0, поверни <code class='text-purple-400'>0</code>.",
+                    "Виклич функцію для `shield = 50` та `damage = 70` і виведи результат."
+                ],
+                initialCode: `# Task 5: Functions & Modular Logic
+def calc_shield_damage(shield, damage):
+    remaining = shield - damage
+    if remaining < 0:
+        return 0
+    return remaining
+
+# Перевірка роботи функції:
+current_shield = calc_shield_damage(50, 70)
+print(f"Залишок щита: {current_shield}")
+`,
+                hint: "Використовуй ключеве слово `def` для опису функції та `return` для повернення значення.",
+                test: async (output, editorCode, pyodide) => {
+                    const hasDef = /def\s+calc_shield_damage\s*\(/.test(editorCode);
+                    const hasReturn = /return\s+/.test(editorCode);
+
+                    if (!hasDef || !hasReturn) {
+                        return { success: false, msg: "❌ Помилка: Створи функцію за допомогою `def` та використай `return`!" };
+                    }
+
+                    try {
+                        const testCode = `
+${editorCode}
+
+res1 = calc_shield_damage(100, 30) == 70
+res2 = calc_shield_damage(50, 80) == 0
+res3 = calc_shield_damage(40, 40) == 0
+res1 and res2 and res3
+`;
+                        const passed = await pyodide.runPythonAsync(testCode);
+                        if (passed) {
+                            return { success: true, msg: "🎉 Вітаємо! Твій Кібер-Асистент працює бездоганно! Усі рівні пройдені! 🏆" };
+                        } else {
+                            return { success: false, msg: "❌ Помилка: Функция розраховує залишок некоректно під час тестових перевірок!" };
+                        }
+                    } catch (e) {
+                        return { success: false, msg: `❌ Системна помилка функції: ${e.message}` };
+                    }
+                }
+            }
+        ];
+
+        // --- STATE MANAGEMENT ---
+        let currentTaskIndex = 0;
+        let completedTasks = new Set();
+        let pyodideInstance = null;
+        let editor = null;
+
+        // --- UI ELEMENTS ---
+        const pyodideStatusText = document.getElementById("pyodide-status-text");
+        const pyodideLoader = document.getElementById("pyodide-loader");
+        const xpDisplay = document.getElementById("xp-display");
+        const progressBar = document.getElementById("progress-bar");
+        const taskTabs = document.getElementById("task-tabs");
+        const taskBadge = document.getElementById("task-badge");
+        const taskStatus = document.getElementById("task-status");
+        const taskTitle = document.getElementById("task-title");
+        const taskDescription = document.getElementById("task-description");
+        const taskRequirements = document.getElementById("task-requirements");
+        const hintToggleBtn = document.getElementById("hint-toggle-btn");
+        const hintBox = document.getElementById("hint-box");
+        const consoleOutput = document.getElementById("console-output");
+        const testResultCard = document.getElementById("test-result-card");
+        const runCodeBtn = document.getElementById("run-code-btn");
+        const testCodeBtn = document.getElementById("test-code-btn");
+        const resetCodeBtn = document.getElementById("reset-code-btn");
+        const clearConsoleBtn = document.getElementById("clear-console-btn");
+
+        // --- INIT CODEMIRROR ---
+        function initCodeMirror() {
+            editor = CodeMirror.fromTextArea(document.getElementById("code-editor"), {
+                mode: "python",
+                theme: "dracula",
+                lineNumbers: true,
+                indentUnit: 4,
+                tabSize: 4,
+                lineWrapping: true,
+                autoCloseBrackets: true
+            });
+        }
+
+        // --- PYODIDE INITIALIZATION ---
+        async function initPyodide() {
+            try {
+                pyodideInstance = await loadPyodide();
+                
+                // Redefine standard python output
+                pyodideInstance.setStdout({
+                    batched: (str) => {
+                        appendConsoleOutput(str + "\n");
+                    }
+                });
+
+                pyodideStatusText.textContent = "Python 3.11 Готовий";
+                pyodideStatusText.className = "text-green-400 font-medium";
+                pyodideLoader.style.display = "none";
+
+                runCodeBtn.disabled = false;
+                testCodeBtn.disabled = false;
+            } catch (err) {
+                pyodideStatusText.textContent = "Помилка завантаження Python Engine";
+                pyodideStatusText.className = "text-red-400 font-medium";
+                console.error(err);
+            }
+        }
+
+        // --- RENDER TASK ---
+        function loadTask(index) {
+            currentTaskIndex = index;
+            const task = tasks[index];
+
+            // Update Tabs UI
+            renderTabs();
+
+            // Task Details
+            taskBadge.textContent = task.badge;
+            taskTitle.textContent = task.title;
+            taskDescription.textContent = task.desc;
+            
+            // Requirements
+            taskRequirements.innerHTML = task.requirements
+                .map(req => `<li>${req}</li>`)
+                .join("");
+
+            // Status Badge
+            if (completedTasks.has(task.id)) {
+                taskStatus.textContent = "✅ Виконано";
+                taskStatus.className = "text-xs px-2.5 py-1 rounded-full bg-green-900/50 text-green-300 border border-green-500/30";
+            } else {
+                taskStatus.textContent = "⏳ Не виконано";
+                taskStatus.className = "text-xs px-2.5 py-1 rounded-full bg-gray-800 text-gray-400 border border-gray-700";
+            }
+
+            // Hint
+            hintBox.textContent = task.hint;
+            hintBox.classList.add("hidden");
+
+            // Editor Content
+            const savedCode = localStorage.getItem(`python_quest_task_${task.id}`);
+            editor.setValue(savedCode || task.initialCode);
+
+            // Reset Test Result Card
+            testResultCard.classList.add("hidden");
+        }
+
+        function renderTabs() {
+            taskTabs.innerHTML = tasks.map((task, idx) => {
+                const isCurrent = idx === currentTaskIndex;
+                const isDone = completedTasks.has(task.id);
+                
+                let btnStyle = "bg-[#0d1117] text-gray-400 hover:text-white border-[#30363d]";
+                if (isCurrent) {
+                    btnStyle = "bg-purple-600 text-white font-bold border-purple-400 shadow";
+                } else if (isDone) {
+                    btnStyle = "bg-green-950/40 text-green-300 border-green-800/50";
+                }
+
+                return `
+                    <button onclick="loadTask(${idx})" class="px-3 py-1.5 rounded-lg border text-xs transition-all flex items-center gap-1.5 ${btnStyle}">
+                        <span>${isDone ? '✅' : '📌'}</span>
+                        <span>Завдання ${task.id}</span>
+                    </button>
+                `;
+            }).join("");
+        }
+
+        // --- CONSOLE HELPERS ---
+        function clearConsole() {
+            consoleOutput.textContent = "";
+        }
+
+        function appendConsoleOutput(text, isError = false) {
+            const span = document.createElement("span");
+            if (isError) {
+                span.className = "text-red-400";
+            }
+            span.textContent = text;
+            consoleOutput.appendChild(span);
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+        }
+
+        // --- EXECUTE CODE ---
+        async function runUserCode() {
+            if (!pyodideInstance) return;
+
+            clearConsole();
+            appendConsoleOutput("🚀 Запуск програми...\n\n");
+
+            const userCode = editor.getValue();
+            // Auto save to local storage
+            localStorage.setItem(`python_quest_task_${tasks[currentTaskIndex].id}`, userCode);
+
+            try {
+                await pyodideInstance.runPythonAsync(userCode);
+                appendConsoleOutput("\n[Програму завершено успішно]");
+            } catch (err) {
+                appendConsoleOutput(`\n❌ Помилка виконання:\n${err.message}`, true);
+            }
+        }
+
+        // --- TEST CODE ---
+        async function testUserCode() {
+            if (!pyodideInstance) return;
+
+            clearConsole();
+            testResultCard.classList.add("hidden");
+            appendConsoleOutput("🧪 Тестування алгоритму...\n\n");
+
+            const currentTask = tasks[currentTaskIndex];
+            const userCode = editor.getValue();
+
+            // Auto save
+            localStorage.setItem(`python_quest_task_${currentTask.id}`, userCode);
+
+            // Capture output for testing
+            let capturedOutput = "";
+            pyodideInstance.setStdout({
+                batched: (str) => {
+                    capturedOutput += str + "\n";
+                    appendConsoleOutput(str + "\n");
+                }
+            });
+
+            try {
+                await pyodideInstance.runPythonAsync(userCode);
+
+                // Run task evaluator
+                const result = await currentTask.test(capturedOutput, userCode, pyodideInstance);
+
+                // Restore default stdout
+                pyodideInstance.setStdout({
+                    batched: (str) => appendConsoleOutput(str + "\n")
+                });
+
+                showTestFeedback(result);
+
+                if (result.success) {
+                    completedTasks.add(currentTask.id);
+                    updateProgress();
+                    loadTask(currentTaskIndex); // Refresh UI status
+                }
+
+            } catch (err) {
+                // Restore default stdout
+                pyodideInstance.setStdout({
+                    batched: (str) => appendConsoleOutput(str + "\n")
+                });
+                
+                appendConsoleOutput(`\n❌ Синтаксична помилка або помилка виконання:\n${err.message}`, true);
+                showTestFeedback({
+                    success: false,
+                    msg: "❌ Не вдалося виконати код. Перевірте синтаксис програми у консолі виводу."
+                });
+            }
+        }
+
+        function showTestFeedback(result) {
+            testResultCard.classList.remove("hidden");
+            if (result.success) {
+                testResultCard.className = "p-4 rounded-xl border border-green-500/50 bg-green-950/30 text-green-300 font-medium";
+            } else {
+                testResultCard.className = "p-4 rounded-xl border border-red-500/50 bg-red-950/30 text-red-300 font-medium";
+            }
+            testResultCard.textContent = result.msg;
+        }
+
+        // --- GAMIFICATION PROGRESS ---
+        function updateProgress() {
+            const count = completedTasks.size;
+            const total = tasks.length;
+            const xp = count * 100;
+            const percentage = (count / total) * 100;
+
+            xpDisplay.textContent = `${xp} / ${total * 100} XP`;
+            progressBar.style.width = `${percentage}%`;
+        }
+
+        // --- EVENT LISTENERS ---
+        runCodeBtn.addEventListener("click", runUserCode);
+        testCodeBtn.addEventListener("click", testUserCode);
+
+        clearConsoleBtn.addEventListener("click", clearConsole);
+
+        resetCodeBtn.addEventListener("click", () => {
+            const currentTask = tasks[currentTaskIndex];
+            editor.setValue(currentTask.initialCode);
+            localStorage.removeItem(`python_quest_task_${currentTask.id}`);
+            clearConsole();
+            testResultCard.classList.add("hidden");
+        });
+
+        hintToggleBtn.addEventListener("click", () => {
+            hintBox.classList.toggle("hidden");
+        });
+
+        // --- INITIALIZATION ON LOAD ---
+        window.onload = () => {
+            initCodeMirror();
+            loadTask(0);
+            initPyodide();
+        };
+    </script>
+</body>
+</html>
